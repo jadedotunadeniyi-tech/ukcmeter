@@ -578,7 +578,7 @@ _BASE_VESSELS: list[dict] = [
      "tpc_mt_cm":15.887,"fwa_mm":135,
      "breakwater_lat":3.45,"api_ref":28.9,"note":"Multi-field shuttle; avg API 28.9\u00b0"},
     {"name":"Balham","class":"General Purpose",
-     "dwt":18535,"grt":14876,"tank_m3_98":25023.45,
+     "dwt":18535,"grt":14876,"tank_m3_98":26098.3,
      "keel":39.70,"loa":157.50,"beam":27.72,"displacement":25074.0,
      "constant":250,"bunker_fw":800,"draft_full":7.146,"block_coeff":0.8260,
      "tpc_mt_cm":39.22,"fwa_mm":156,
