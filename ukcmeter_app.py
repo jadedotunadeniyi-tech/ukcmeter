@@ -610,7 +610,7 @@ FIELD_API_PRESETS: dict[str, float | None] = {
 # ─────────────────────────────────────────────────────────────────────────────
 DEPTH_PRESETS: dict[str, float | None] = {
     "\u2014 Manual entry \u2014":                     None,
-    "San Barth \u2014 Bonny River (3.45 m LAT)":      3.45,
+    "San Barth \u2014 River Entrance (3.45 m LAT)":      3.45,
     "Awoba / Cawthorne Channel (3.30 m LAT)":          3.30,
     "Export Terminal / Bonny Channel (11.20 m)":       11.20,
     "Westmore Terminal (7.00 m)":                       7.00,
@@ -1964,12 +1964,12 @@ with st.sidebar:
         _SW_PRESETS = {
             # Default = fresh water (1.000) — lightest density, deepest draft, most conservative
             # Conservative loading principle: plan for worst case, adjust up if confirmed denser
-            "Fresh water — terminal / river berth (most conservative)": 1.0000,
+            "Fresh water — terminal / soku river (most conservative)": 1.0000,
             "Cawthorne Channel / Awoba (20 ppt)":                   1.0125,
             "Bonny River estuary (brackish, 25 ppt)":               1.0155,
-            "Bonny Channel / offshore approach (29 ppt)":           1.0205,
+            "Bonny Channel / offshore (29 ppt)":           1.0205,
             "Bight of Benin — open sea (34 ppt)":              1.0245,
-            "Full ocean salinity — BIA offshore (35 ppt)":     1.0255,
+            "BIA offshore (35 ppt)":     1.0255,
             "— Manual entry —":                           None,
         }
         _sw_preset_key = st.selectbox("Water density preset", list(_SW_PRESETS.keys()),
