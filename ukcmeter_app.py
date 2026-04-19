@@ -463,7 +463,7 @@ _BASE_VESSELS: list[dict] = [
     {"name":"Alkebulan","class":"Suezmax",
      "dwt":159988,"grt":64473,"tank_m3_98":171991.2,
      "keel":50.6,"loa":274.2,"beam":48.0,"displacement":183068.1,
-     "constant":500,"bunker_fw":2500,"draft_full":17.05,"block_coeff":0.8266,
+     "constant":500,"bunker_fw":4800,"draft_full":17.05,"block_coeff":0.8266,
      "tpc_mt_cm":129.239,"fwa_mm":375,
      "breakwater_lat":11.3,"api_ref":28.9,"note":"Suezmax mother vessel — BIA only"},
     {"name":"Green Eagle","class":"Suezmax",
@@ -475,7 +475,7 @@ _BASE_VESSELS: list[dict] = [
     {"name":"Bryanston","class":"Aframax",
      "dwt":108493,"grt":46904,"tank_m3_98":120859.9,
      "keel":48.0,"loa":244.26,"beam":42.03,"displacement":125786.0,
-     "constant":203,"bunker_fw":2500,"draft_full":15.228,"block_coeff":0.8194,
+     "constant":203,"bunker_fw":4800,"draft_full":15.228,"block_coeff":0.8194,
      "tpc_mt_cm":91.904,"fwa_mm":332,
      "breakwater_lat":11.35,"api_ref":28.9,"note":"Aframax mother vessel — BIA only"},
     # ── LR-1 ─────────────────────────────────────────────────────────────────
