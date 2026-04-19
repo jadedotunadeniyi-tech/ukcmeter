@@ -1,7 +1,7 @@
 """
 Vessel Stowage Calculator — v3
 ================================
-Nigerian offshore crude oil loading plan tool.
+Bonny Light crude oil/Condensate loading plan tool.
 
 Terminology corrections (v3):
 - DWT is Tropical Deadweight (at Tropical Load Line)
@@ -1933,7 +1933,7 @@ with st.sidebar:
     st.markdown('''
     <div class="sidebar-brand">
       <div class="sidebar-title">⚓ ukcmeter</div>
-      <div class="sidebar-sub">Nigerian Offshore Crude Oil · Loading &amp; Safety</div>
+      <div class="sidebar-sub">Bonny Light Crude Oil/Condensate · Loading &amp; Safety</div>
     </div>''', unsafe_allow_html=True)
 
     db = get_db()
@@ -2157,7 +2157,7 @@ st.markdown(f"""
   <div class="app-header-left">
     <div>
       <div class="app-name">⚓ ukcmeter</div>
-      <div class="app-sub">Nigerian Offshore Crude Oil · Loading &amp; Safety Calculator</div>
+      <div class="app-sub">Bonny Light Crude Oil/Condensate · Loading &amp; Safety Calculator</div>
     </div>
     <div class="vessel-pill">{selected_name}</div>
   </div>
