@@ -556,7 +556,7 @@ _BASE_VESSELS: list[dict] = [
     {"name":"MT Santa Monica","class":"General Purpose",
      "dwt":6208.83,"grt":4126,"tank_m3_98":5819.248,
      "keel":28.5,"loa":112.01,"beam":16.2,"displacement":8761.25,
-     "constant":20,"bunker_fw":1500,"draft_full":6.125,"block_coeff":0.680,
+     "constant":20,"bunker_fw":570,"draft_full":6.125,"block_coeff":0.680,
      "breakwater_lat":3.45,"api_ref":28.9,"note":"Multi-field shuttle; avg API 28.9\u00b0"},
     {"name":"Duke","class":"General Purpose",
      "dwt":19651,"grt":11118,"tank_m3_98":19137.0,
