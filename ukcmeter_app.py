@@ -469,7 +469,7 @@ _BASE_VESSELS: list[dict] = [
     {"name":"Green Eagle","class":"Suezmax",
      "dwt":154164,"grt":78922,"tank_m3_98":166696.0,
      "keel":49.94,"loa":274.2,"beam":48.0,"displacement":176634.0,
-     "constant":500,"bunker_fw":2500,"draft_full":16.36,"block_coeff":0.8344,
+     "constant":500,"bunker_fw":4800,"draft_full":16.36,"block_coeff":0.8344,
      "tpc_mt_cm":117.59,"fwa_mm":368,
      "breakwater_lat":11.3,"api_ref":28.9,"note":"Suezmax mother vessel — BIA only"},
     {"name":"Bryanston","class":"Aframax",
