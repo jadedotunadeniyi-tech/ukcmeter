@@ -550,7 +550,7 @@ _BASE_VESSELS: list[dict] = [
     {"name":"MT Woodstock","class":"General Purpose",
      "dwt":15761,"grt":8602,"tank_m3_98":16050.0,
      "keel":35.6,"loa":139.95,"beam":21.0,"displacement":20000.0,
-     "constant":250,"bunker_fw":1500,"draft_full":8.252,"block_coeff":0.8530,
+     "constant":250,"bunker_fw":800,"draft_full":8.252,"block_coeff":0.8530,
      "tpc_mt_cm":28.271,"fwa_mm":169,
      "breakwater_lat":3.45,"api_ref":28.9,"note":"Shuttle — Duke (Awoba)"},
     {"name":"MT Rathbone","class":"General Purpose",
