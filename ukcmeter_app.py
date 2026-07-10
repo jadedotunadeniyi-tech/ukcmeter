@@ -503,7 +503,7 @@ _BASE_VESSELS: list[dict] = [
      "breakwater_lat":3.45,"api_ref":28.9,"note":"Westmore storage —"},
     {"name":"MT Chapel","class":"MR",
      "dwt":48354,"grt":22050,"tank_m3_98":50332.4,
-     "keel":45.55,"loa":182.5,"beam":32.23,"displacement":57863.0,
+     "keel":46.69,"loa":182.5,"beam":32.23,"displacement":57863.0,
      "constant":270,"bunker_fw":1500,"draft_full":12.93,"block_coeff":0.7876,
      "tpc_mt_cm":50.26,"fwa_mm":279,
      "breakwater_lat":14.0,"api_ref":28.9,"note":"Shuttle (BV class, IMO 9254070)"},
