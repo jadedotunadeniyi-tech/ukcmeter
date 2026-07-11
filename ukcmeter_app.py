@@ -764,129 +764,53 @@ def compute_limits(v: dict, bunker_mt: float, fw_mt: float, constant_mt: float,
         "binding":          binding,
     }
 
-def build_hydro_anchors(v: dict):
-    """v4 - Sorted [(draft_m, displacement_mt)] hydrostatic anchor points.
-
-    Priority: v['hydro_anchors'] (captured from Q88 field 1.39: lightship +
-    winter/summer/tropical) else individual stored keys. The authoritative
-    tropical point (draft_full/displacement) is always reconciled in so user
-    edits stay consistent. Returns None if <2 distinct drafts -> caller falls
-    back to the v3 single-TPC method.
-    """
-    pts = {}
-    raw = v.get("hydro_anchors")
-    if raw:
-        for pair in raw:
-            try:
-                d, w = float(pair[0]), float(pair[1])
-            except (TypeError, ValueError, IndexError):
-                continue
-            if d > 0 and w > 0:
-                pts[round(d, 3)] = w
-    else:
-        cand = [
-            (v.get("lightship_draft"),
-             (v.get("displacement", 0) - v.get("dwt", 0))
-             if v.get("displacement") and v.get("dwt") else None),
-            (v.get("winter_draft"), v.get("winter_disp")),
-            (v.get("summer_draft"), v.get("summer_disp")),
-            (v.get("draft_full"),   v.get("displacement")),
-        ]
-        for d, w in cand:
-            if d and w and d > 0 and w > 0:
-                pts[round(float(d), 3)] = float(w)
-    if v.get("draft_full") and v.get("displacement"):
-        pts[round(float(v["draft_full"]), 3)] = float(v["displacement"])
-    if len(pts) < 2:
-        return None
-    return sorted(pts.items())
-
-
-def _interp_disp(anchors, draft):
-    """Piecewise-linear displacement at a draft; linear beyond the end anchors."""
-    if draft <= anchors[0][0]:
-        (d0, w0), (d1, w1) = anchors[0], anchors[1]
-    elif draft >= anchors[-1][0]:
-        (d0, w0), (d1, w1) = anchors[-2], anchors[-1]
-    else:
-        d0, w0, d1, w1 = anchors[-2][0], anchors[-2][1], anchors[-1][0], anchors[-1][1]
-        for (a0, b0), (a1, b1) in zip(anchors, anchors[1:]):
-            if a0 <= draft <= a1:
-                d0, w0, d1, w1 = a0, b0, a1, b1
-                break
-    return w0 + (w1 - w0) * (draft - d0) / (d1 - d0)
-
-
-def _interp_draft(anchors, disp):
-    """Inverse of _interp_disp: draft (salt water) for a given displacement."""
-    if disp <= anchors[0][1]:
-        (d0, w0), (d1, w1) = anchors[0], anchors[1]
-    elif disp >= anchors[-1][1]:
-        (d0, w0), (d1, w1) = anchors[-2], anchors[-1]
-    else:
-        d0, w0, d1, w1 = anchors[-2][0], anchors[-2][1], anchors[-1][0], anchors[-1][1]
-        for (a0, b0), (a1, b1) in zip(anchors, anchors[1:]):
-            if b0 <= disp <= b1:
-                d0, w0, d1, w1 = a0, b0, a1, b1
-                break
-    return d0 + (d1 - d0) * (disp - w0) / (w1 - w0)
-
-
-def hydro_method_info(v: dict, draft_m: float) -> dict:
-    """Transparency: which method was used and whether the draft is inside the
-    certified anchor range (interpolation) or outside it (extrapolation)."""
-    anchors = build_hydro_anchors(v)
-    if not anchors:
-        return {"method": "single-TPC (v3 fallback)", "interpolated": False,
-                "anchor_count": 0, "range": None,
-                "note": "No multi-point hydrostatics stored - re-import the Q88 "
-                        "to capture field 1.39 for higher accuracy."}
-    lo, hi = anchors[0][0], anchors[-1][0]
-    inside = (lo - 1e-6) <= draft_m <= (hi + 1e-6)
-    return {"method": "multi-point interpolation (%d anchors)" % len(anchors),
-            "interpolated": inside, "anchor_count": len(anchors),
-            "range": (round(lo, 3), round(hi, 3)),
-            "note": ("Within certified anchor range - high accuracy."
-                     if inside else
-                     "Draft %.2f m is OUTSIDE the certified range %.2f-%.2f m - "
-                     "extrapolated; verify against the deadweight scale."
-                     % (draft_m, lo, hi))}
-
-
 def _displacement_at_draft(v: dict, draft_m: float) -> float:
-    """Displacement (MT, salt water) at a draft.
-
-    v4: piecewise-linear interpolation across certified hydrostatic anchors
-    (Q88 1.39) - tracks the real waterplane-area change with draft and fixes the
-    low-draft error of extrapolating one load-line TPC. Falls back to the v3
-    single-TPC anchor when <2 anchor points are available.
     """
-    anchors = build_hydro_anchors(v)
-    if anchors:
-        return _interp_disp(anchors, draft_m)
+    Compute displacement at a given draft using the TPC-anchor method.
+
+    Method (per IACS loading computer standards, BV NR467, DNV-GL OTG-09):
+      Anchor point: tropical load line draft (TLD) and tropical displacement
+      ΔM = TPC × 100 × (draft_m - TLD)    [TPC in MT/cm → ×100 for MT/m]
+      Δ(draft_m) = Δ_trop + ΔM
+
+    If the vessel has a certified TPC from Q88 (tpc_mt_cm field), use it.
+    Fallback: use full-displacement proportional method (less accurate).
+
+    Physical basis: TPC represents the actual waterplane area at the operating
+    draft and is certified by the classification society from tank tests or
+    in-service measurements. It is accurate to ±0.3% across the normal loading
+    range, far better than the proportional method (±3-8% for tankers with
+    pronounced parallel midbody).
+    """
     tld  = v["draft_full"]
     disp = v["displacement"]
     if tld <= 0 or disp <= 0:
         return disp
     tpc = v.get("tpc_mt_cm")
     if tpc and tpc > 0:
-        return disp + tpc * 100.0 * (draft_m - tld)
+        # TPC-anchor: linear around tropical load line (accurate in loading range)
+        delta = tpc * 100.0 * (draft_m - tld)   # MT/cm × 100cm/m × Δdraft_m
+        return disp + delta
+    # Fallback — proportional method
     return (draft_m / tld) * disp
 
 
 def _draft_from_displacement(v: dict, displacement_mt: float) -> float:
-    """Inverse: draft in standard salt water for a given displacement.
-    v4 inverts the multi-point curve when anchors exist; else v3 TPC anchor."""
-    anchors = build_hydro_anchors(v)
-    if anchors:
-        return _interp_draft(anchors, displacement_mt)
+    """
+    Inverse: draft in standard salt water (1.025 t/m³) for a given displacement.
+    Uses TPC-anchor method if available, else proportional fallback.
+    """
     tld  = v["draft_full"]
     disp = v["displacement"]
     if disp <= 0:
         return 0.0
     tpc = v.get("tpc_mt_cm")
     if tpc and tpc > 0:
+        # draft = TLD + (Δ_target - Δ_trop) / (TPC × 100)
         return tld + (displacement_mt - disp) / (tpc * 100.0)
+    # Fallback — proportional
+    if disp <= 0:
+        return 0.0
     return (displacement_mt / disp) * tld
 
 
@@ -1065,7 +989,6 @@ def draft_to_volume(v: dict, draft_m: float, api: float,
         "tank_98_bbl":      round(m3_to_bbl(tank_98)),
         "tank_util_pct":    round(max(0, util_vol), 1),
         "dwt_util_pct":     round(max(0, util_dwt), 1),
-        "hydro":            hydro_method_info(v, draft_m),
     }
 
 def ukc_assessment(draft_m: float, water_depth: float,
@@ -1970,36 +1893,6 @@ def extract_q88_fields(raw_text):
     else:
         displacement = disp_trop
 
-    # ── v4: full hydrostatic anchor set (Q88 field 1.39) ─────────────────────
-    # Capture lightship draft + the summer/winter load-line points so the
-    # calculator can INTERPOLATE the displacement curve instead of extrapolating
-    # a single TPC.  Each load-line row: <freeboard> m <draft> m <DWT> mt <disp> mt
-    def _loadline_row(label):
-        mm = srch(
-            label + r"[:\s]+([\d,.]+)\s*(?:Metres?|m)\s+"
-            r"([\d,.]+)\s*(?:Metres?|m)\s+"
-            r"([\d,.]+)\s*Metric\s+Tonnes?\s+"
-            r"([\d,.]+)\s*Metric\s+Tonnes?"
-        )
-        if mm:
-            return _fix_draft(_q88_num(mm.group(2))), _q88_num(mm.group(4))
-        return None, None
-
-    summer_draft, summer_disp = _loadline_row(r"Summer")
-    winter_draft, winter_disp = _loadline_row(r"Winter")
-    m_lsd = srch(r"Lightship[:\s]+[\d,.]+\s*(?:Metres?|m)\s+([\d,.]+)\s*(?:Metres?|m)")
-    lightship_draft = _fix_draft(_q88_num(m_lsd.group(1))) if m_lsd else None
-
-    _anchor_pairs = [
-        (lightship_draft, lightship),
-        (winter_draft,    winter_disp),
-        (summer_draft,    summer_disp),
-        (draft_full,      displacement),
-    ]
-    hydro_anchors = [[float(d), float(w)] for d, w in _anchor_pairs
-                     if d and w and d > 0 and w > 0]
-    hydro_anchors = hydro_anchors if len(hydro_anchors) >= 2 else None
-
     # ── Constant ─────────────────────────────────────────────────────────────
     m = srch(r"1\.42\s+Constant.*?:\s*([\d,.]+)\s*(?:Metric|MT|mt)")
     constant = _q88_num(m.group(1)) if m else None
@@ -2071,12 +1964,6 @@ def extract_q88_fields(raw_text):
         "tank_src":     tank_src,
         "fwa_mm":       fwa_mm,      # Fresh Water Allowance (Q88 field 1.40, mm)
         "tpc_mt_cm":    tpc_mt_cm,   # Tonnes Per Centimetre (Q88 field 1.40, MT/cm)
-        "lightship_draft": lightship_draft,   # v4 (Q88 1.39)
-        "summer_draft":    summer_draft,      # v4 (Q88 1.39)
-        "summer_disp":     summer_disp,       # v4 (Q88 1.39)
-        "winter_draft":    winter_draft,      # v4 (Q88 1.39)
-        "winter_disp":     winter_disp,       # v4 (Q88 1.39)
-        "hydro_anchors":   hydro_anchors,     # v4 multi-point hydrostatics
         "_missing":     missing,
         "_disp_trop":   disp_trop,
     }
@@ -3285,18 +3172,6 @@ with tab6:
                             "Rename it or delete the existing entry in Master Data first."
                         )
                     else:
-                        # v4 - persist multi-point hydrostatics (Q88 1.39):
-                        # edited tropical point + extracted lightship/load lines
-                        _ls_disp_edit = (r_disp - r_dwt) if (r_disp and r_dwt) else None
-                        _anchor_src = [
-                            (q88.get("lightship_draft"), _ls_disp_edit),
-                            (q88.get("winter_draft"),    q88.get("winter_disp")),
-                            (q88.get("summer_draft"),    q88.get("summer_disp")),
-                            (r_draft,                    r_disp),
-                        ]
-                        _hydro_anchors = [[float(d), float(w)] for d, w in _anchor_src
-                                          if d and w and d > 0 and w > 0]
-                        _hydro_anchors = _hydro_anchors if len(_hydro_anchors) >= 2 else None
                         save_vessel({
                             "name":          nn,
                             "class":         _auto_cls,
@@ -3316,7 +3191,6 @@ with tab6:
                             "breakwater_lat": r_bwlat,
                             "api_ref":       r_api,
                             "note":          r_note,
-                            "hydro_anchors": _hydro_anchors,   # v4
                         })
                         # Clear the cached extraction so the uploader resets
                         st.session_state.pop("_q88_extracted", None)
