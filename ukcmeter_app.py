@@ -1746,13 +1746,22 @@ def summary_png_bytes(rows: list[tuple], title: str = "Loading Calculation Summa
 
     Returns PNG bytes for st.download_button.
     """
+    # ── Helper: Remove emoji to prevent matplotlib rendering crashes ─────────
+    def strip_emoji(text: str) -> str:
+        """Remove emoji characters that matplotlib fonts don't support."""
+        import unicodedata
+        return ''.join(
+            c for c in text
+            if unicodedata.category(c)[0] != 'S'  # Remove symbols/emoji
+        )
+    
     # ── Try matplotlib first (best output) ───────────────────────────────────
     try:
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
         import warnings
-        warnings.filterwarnings('ignore', category=UserWarning, module='matplotlib')
+        warnings.filterwarnings('ignore', category=UserWarning)
 
         n     = len(rows)
         fig_h = max(4, n * 0.38 + 1.4)
@@ -1761,12 +1770,17 @@ def summary_png_bytes(rows: list[tuple], title: str = "Loading Calculation Summa
         ax.set_facecolor("#111827")
         ax.axis("off")
 
-        ax.text(0.5, 1.0, title, transform=ax.transAxes, ha="center", va="top",
+        # Strip emoji from title to prevent matplotlib crashes
+        clean_title = strip_emoji(title)
+        ax.text(0.5, 1.0, clean_title, transform=ax.transAxes, ha="center", va="top",
                 fontsize=15, fontweight="bold", color="#0ea5e9",
                 fontfamily="monospace")
 
+        # Strip emoji from row data
+        clean_rows = [[strip_emoji(r[0]), strip_emoji(str(r[1]))] for r in rows]
+        
         tbl = ax.table(
-            cellText=[[r[0], r[1]] for r in rows],
+            cellText=clean_rows,
             colLabels=["Parameter", "Value"],
             colWidths=[0.42, 0.58],
             loc="center",
@@ -1797,7 +1811,7 @@ def summary_png_bytes(rows: list[tuple], title: str = "Loading Calculation Summa
         buf.seek(0)
         return buf.read()
 
-    except Exception:
+    except Exception as e:
         pass  # matplotlib failed or not installed — use Pillow fallback below
 
     # ── Pillow fallback (Streamlit Cloud core dependency) ─────────────────────
