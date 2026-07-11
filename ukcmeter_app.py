@@ -537,20 +537,6 @@ _BASE_VESSELS: list[dict] = [
      "constant":270,"bunker_fw":1500,"draft_full":12.2,"block_coeff":0.7805,
      "tpc_mt_cm":51.80,"fwa_mm":271,
      "breakwater_lat":3.45,"api_ref":28.9,"note":""},
-    {"name":"Fatima Zarah","class":"MR",
-     "dwt":51460.30,"grt":30087,"tank_m3_98":52111.01,
-     "keel":48.45,"loa":174.0,"beam":32.23,"displacement":62385.20,
-     "constant":270,"bunker_fw":1500,"draft_full":13.35,"block_coeff":0.8130,
-     "tpc_mt_cm":52.00,"fwa_mm":293,
-     "breakwater_lat":3.45,"api_ref":28.9,
-     "note":"IMO 9636694 (ex-Evo/Kiribora); Oil/Chemical IMO Type 3, double hull, "
-            "COW+IGS fitted. Q88 V6 30-Mar-2026 \u2014 full hydrostatic anchors + "
-            "certified FWA/TPC captured. loa field = LBP 174.0 (this app's Q88-import "
-            "convention), NOT true LOA 183.0 \u2014 see chat notes. constant/bunker_fw/"
-            "breakwater_lat are fleet-default assumptions, not from Q88 \u2014 verify. "
-            "Recent cargoes AGO/Jet A1 (products, Lom\u00e9/Cotonou) \u2014 confirm "
-            "crude-service fit.",
-     "hydro_anchors":[[2.74,10924.90],[12.80,59555.50],[13.08,60969.00],[13.35,62385.20]]},
     # ── General Purpose ───────────────────────────────────────────────────────
     {"name":"MT Bedford","class":"General Purpose",
      "dwt":18568,"grt":14876,"tank_m3_98":26098.32,
@@ -1881,14 +1867,6 @@ def _normalize_q88(text):
         r"([\d,.]+)\s+Metric\s+([\d,.]+)\s+Metric\s+Tonnes\s+Tonnes",
         r"\1 Metric Tonnes \2 Metric Tonnes", text
     )
-    # Some Q88 PDFs embed ligatures (ti/ft/tt/fi...) as glyphs pdfplumber can't
-    # map to Unicode; it emits a literal "(cid:NNN)" placeholder inline instead
-    # (e.g. "Fa(cid:415)ma" for "Fatima"). Left in place, the stray "(" and ":"
-    # inside that placeholder are mistaken for real field delimiters by the
-    # regexes below (worst case: truncates a vessel name mid-word). Strip them.
-    # This does not recover the missing letter(s) - visually check names/text
-    # fields extracted from PDFs that trigger this.
-    text = _re.sub(r"\(cid:\d+\)", "", text)
     return text
 
 
