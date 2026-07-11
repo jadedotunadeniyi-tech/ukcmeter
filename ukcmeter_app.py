@@ -1738,83 +1738,14 @@ table{{width:100%;border-collapse:collapse;}}
 
 def summary_png_bytes(rows: list[tuple], title: str = "Loading Calculation Summary") -> bytes:
     """
-    Render the loading summary table as a PNG image.
-
-    Primary renderer: matplotlib (high quality, dark-themed table).
-    Fallback renderer: Pillow/PIL (always available on Streamlit Cloud —
-        installed as a Streamlit core dependency).
+    Render the loading summary table as a PNG image using Pillow only.
+    
+    This implementation uses PIL/Pillow exclusively to avoid matplotlib 
+    segmentation faults on Streamlit Cloud. Pillow is a core Streamlit 
+    Cloud dependency and provides stable, reliable PNG rendering.
 
     Returns PNG bytes for st.download_button.
     """
-    # ── Helper: Remove emoji to prevent matplotlib rendering crashes ─────────
-    def strip_emoji(text: str) -> str:
-        """Remove emoji characters that matplotlib fonts don't support."""
-        import unicodedata
-        return ''.join(
-            c for c in text
-            if unicodedata.category(c)[0] != 'S'  # Remove symbols/emoji
-        )
-    
-    # ── Try matplotlib first (best output) ───────────────────────────────────
-    try:
-        import matplotlib
-        matplotlib.use("Agg")
-        import matplotlib.pyplot as plt
-        import warnings
-        warnings.filterwarnings('ignore', category=UserWarning)
-
-        n     = len(rows)
-        fig_h = max(4, n * 0.38 + 1.4)
-        fig, ax = plt.subplots(figsize=(10, fig_h))
-        fig.patch.set_facecolor("#111827")
-        ax.set_facecolor("#111827")
-        ax.axis("off")
-
-        # Strip emoji from title to prevent matplotlib crashes
-        clean_title = strip_emoji(title)
-        ax.text(0.5, 1.0, clean_title, transform=ax.transAxes, ha="center", va="top",
-                fontsize=15, fontweight="bold", color="#0ea5e9",
-                fontfamily="monospace")
-
-        # Strip emoji from row data
-        clean_rows = [[strip_emoji(r[0]), strip_emoji(str(r[1]))] for r in rows]
-        
-        tbl = ax.table(
-            cellText=clean_rows,
-            colLabels=["Parameter", "Value"],
-            colWidths=[0.42, 0.58],
-            loc="center",
-            cellLoc="left",
-        )
-        tbl.auto_set_font_size(False)
-        tbl.set_fontsize(9)
-
-        for (ri, ci), cell in tbl.get_celld().items():
-            cell.set_linewidth(0.5)
-            if ri == 0:
-                cell.set_facecolor("#1e3a5f")
-                cell.set_text_props(color="#7dd3fc", fontweight="bold",
-                                    fontfamily="monospace")
-                cell.set_edgecolor("#0ea5e9")
-            else:
-                cell.set_facecolor("#1a2236" if ri % 2 == 0 else "#111827")
-                cell.set_text_props(color="#e2e8f0", fontfamily="monospace")
-                cell.set_edgecolor("#1e3a5f")
-            cell.set_height(0.048)
-
-        tbl.scale(1, 1.0)
-        plt.tight_layout(pad=0.4)
-        buf = io.BytesIO()
-        plt.savefig(buf, format="png", dpi=150, bbox_inches="tight",
-                    facecolor=fig.get_facecolor())
-        plt.close(fig)
-        buf.seek(0)
-        return buf.read()
-
-    except Exception as e:
-        pass  # matplotlib failed or not installed — use Pillow fallback below
-
-    # ── Pillow fallback (Streamlit Cloud core dependency) ─────────────────────
     from PIL import Image, ImageDraw, ImageFont
 
     # Layout constants
